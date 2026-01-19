@@ -33,9 +33,6 @@ This project strictly follows the dictated Mimari Kurallar:
 
 🚀 Getting Started (Docker)
 
-The project is fully containerized for easy evaluation. Both the application and the PostgreSQL database can be started with a single command:
-Bash
-
 docker-compose up --build
 
 The application will be accessible at http://localhost:8080.
