@@ -6,7 +6,7 @@ A Spring Boot-based RESTful API designed to manage students, courses, and grade 
 
 ### Prerequisites
 * [Docker Desktop](https://www.docker.com/products/docker-desktop/)
-* [Postman](https://www.postman.com/) (for testing API endpoints)
+* [Junit 5](https://junit.org/) (for testing API endpoints)
 
 ### Running the Project
 The entire system (Application + PostgreSQL Database) is containerized. To start the project, run the following command in the root directory:
