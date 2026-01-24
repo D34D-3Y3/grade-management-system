@@ -2,8 +2,9 @@ package com.company.grades.repository;
 
 import com.company.grades.model.Student;
 import org.springframework.data.jpa.repository.JpaRepository;
-import java.util.UUID;
+import org.springframework.stereotype.Repository;
 
-// JpaRepository<EntityName, PrimaryKeyType>
-public interface StudentRepository extends JpaRepository<Student, UUID> {
+@Repository
+public interface StudentRepository extends JpaRepository<Student, String> { 
+    // The 'String' here matches the @Id type in your Student entity
 }

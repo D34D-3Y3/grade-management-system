@@ -2,8 +2,8 @@ package com.company.grades.repository;
 
 import com.company.grades.model.Grade;
 import org.springframework.data.jpa.repository.JpaRepository;
-import java.util.UUID;
+import org.springframework.stereotype.Repository;
 
-public interface GradeRepository extends JpaRepository<Grade, UUID> {
-    // This connects to the Enrollment 1-1 Grade relationship [cite: 44]
+@Repository
+public interface GradeRepository extends JpaRepository<Grade, String> {
 }

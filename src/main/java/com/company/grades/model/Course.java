@@ -1,57 +1,28 @@
 package com.company.grades.model;
 
 import jakarta.persistence.*;
-import java.util.UUID;
+import jakarta.validation.constraints.NotBlank;
+import lombok.*;
 
 @Entity
 @Table(name = "courses")
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class Course {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
-    private UUID id;
+    private String id;
 
-    @Column(unique = true, nullable = false) // Requirement: Course code must be unique
+    @NotBlank(message = "Course code is required")
+    @Column(nullable = false, unique = true)
+    // e.g., "CS101", "MAT202". Must be unique to identify the subject.
     private String code;
 
+    @NotBlank(message = "Course name is required")
+    @Column(nullable = false)
+    // Descriptive name, e.g., "Introduction to Computer Science"
     private String name;
-
-    private Integer credit;
-
-    // Default Constructor (Required by JPA)
-    public Course() {
-    }
-
-    // Getters and Setters
-    public UUID getId() {
-        return id;
-    }
-
-    public void setId(UUID id) {
-        this.id = id;
-    }
-
-    public String getCode() {
-        return code;
-    }
-
-    public void setCode(String code) {
-        this.code = code;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    public Integer getCredit() {
-        return credit;
-    }
-
-    public void setCredit(Integer credit) {
-        this.credit = credit;
-    }
 }

@@ -1,28 +1,40 @@
 package com.company.grades.model;
 
 import jakarta.persistence.*;
-import java.util.UUID;
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
+import lombok.*;
 
 @Entity
 @Table(name = "students")
+@Data                 // Generates Getters, Setters, toString, equals, and hashCode
+@NoArgsConstructor    // Required by JPA specification
+@AllArgsConstructor   // Useful for testing and builder pattern
+@Builder              // Enables cleaner object creation: Student.builder().name("John").build()
 public class Student {
+
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
-    private UUID id;
-    private String studentNo;
-    private String firstName;
-    private String lastName;
-    private String email;
+    @Column(updatable = false, nullable = false)
+    // Primary key: UUID is safer than Integer for distributed systems
+    private String id;
 
-    // Standard Getters and Setters
-    public UUID getId() { return id; }
-    public void setId(UUID id) { this.id = id; }
-    public String getStudentNo() { return studentNo; }
-    public void setStudentNo(String studentNo) { this.studentNo = studentNo; }
-    public String getFirstName() { return firstName; }
-    public void setFirstName(String firstName) { this.firstName = firstName; }
-    public String getLastName() { return lastName; }
-    public void setLastName(String lastName) { this.lastName = lastName; }
-    public String getEmail() { return email; }
-    public void setEmail(String email) { this.email = email; }
+    @NotBlank(message = "Student number cannot be empty")
+    @Column(nullable = false, unique = true)
+    // Unique identifier assigned by the institution (e.g., "2023001")
+    private String studentNo;
+
+    @NotBlank(message = "First name is required")
+    @Column(nullable = false)
+    private String firstName;
+
+    @NotBlank(message = "Last name is required")
+    @Column(nullable = false)
+    private String lastName;
+
+    @Email(message = "Email must be valid")
+    @NotBlank(message = "Email is required")
+    @Column(nullable = false, unique = true)
+    // Communication channel; must be unique in the system
+    private String email;
 }

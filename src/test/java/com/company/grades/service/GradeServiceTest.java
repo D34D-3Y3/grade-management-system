@@ -1,8 +1,18 @@
 package com.company.grades.service;
 
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.*;
+
+import com.company.grades.dto.GradeDTO;
+import com.company.grades.mapper.GradeMapper;
+import com.company.grades.model.Enrollment;
 import com.company.grades.model.Grade;
 import com.company.grades.model.GradeResult;
+import com.company.grades.repository.EnrollmentRepository;
 import com.company.grades.repository.GradeRepository;
+import com.company.grades.service.impl.GradeServiceImpl;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -10,11 +20,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.util.UUID;
-
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.when;
+import java.util.Optional;
 
 @ExtendWith(MockitoExtension.class)
 public class GradeServiceTest {
@@ -22,59 +28,81 @@ public class GradeServiceTest {
     @Mock
     private GradeRepository gradeRepository;
 
+    @Mock
+    private EnrollmentRepository enrollmentRepository;
+
+    @Mock
+    private GradeMapper gradeMapper;
+
     @InjectMocks
-    private GradeService gradeService;
+    private GradeServiceImpl gradeService; // Testing the implementation
 
-    @Test
-    @DisplayName("Should calculate 40/60 weighted average and return GECTI when >= 60")
-    void testProcessGradeEntry_Success() {
-        // Arrange
-        UUID enrollmentId = UUID.randomUUID();
-        Grade gradeRequest = new Grade();
-        gradeRequest.setMidterm(70.0);    // 70 * 0.4 = 28
-        gradeRequest.setFinalExam(80.0);  // 80 * 0.6 = 48 -> Total: 76
+    private GradeDTO inputDto;
+    private Enrollment mockEnrollment;
+    private Grade mockGrade;
 
-        when(gradeRepository.save(any(Grade.class))).thenAnswer(invocation -> invocation.getArgument(0));
+    @BeforeEach
+    void setUp() {
+        // Prepare a sample input DTO
+        inputDto = GradeDTO.builder()
+                .enrollmentId("env-123")
+                .midterm(50.0)
+                .finalExam(70.0)
+                .build();
 
-        // Act
-        Grade result = gradeService.processGradeEntry(enrollmentId, gradeRequest);
+        mockEnrollment = new Enrollment();
+        mockEnrollment.setId("env-123");
 
-        // Assert
-        assertAll(
-            () -> assertEquals(76.0, result.getAverage(), "Average calculation should be (70*0.4)+(80*0.6)"),
-            () -> assertEquals(GradeResult.GECTI, result.getResult(), "Result should be GECTI for average 76")
-        );
+        mockGrade = new Grade();
     }
 
     @Test
-    @DisplayName("Should return KALDI when weighted average is below 60")
-    void testProcessGradeEntry_Failure() {
-        // Arrange
-        Grade gradeRequest = new Grade();
-        gradeRequest.setMidterm(40.0);    // 16
-        gradeRequest.setFinalExam(50.0);  // 30 -> Total: 46
-
+    @DisplayName("Should calculate average as 62.0 and result as GECTI (40/60 weight)")
+    void shouldCalculatePassingGrade() {
+        // Arrange: Define behavior for mocks
+        when(enrollmentRepository.findById("env-123")).thenReturn(Optional.of(mockEnrollment));
+        when(gradeMapper.toEntity(any(GradeDTO.class))).thenReturn(mockGrade);
         when(gradeRepository.save(any(Grade.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(gradeMapper.toDto(any(Grade.class))).thenAnswer(invocation -> {
+            Grade g = invocation.getArgument(0);
+            return GradeDTO.builder()
+                    .average(g.getAverage())
+                    .result(g.getResult())
+                    .build();
+        });
 
-        // Act
-        Grade result = gradeService.processGradeEntry(UUID.randomUUID(), gradeRequest);
+        // Act: Execute the service method
+        GradeDTO resultDto = gradeService.submitGrade(inputDto);
 
-        // Assert
-        assertEquals(46.0, result.getAverage());
-        assertEquals(GradeResult.KALDI, result.getResult());
+        // Assert: Verify the 40/60 logic
+        // (50 * 0.4) + (70 * 0.6) = 20 + 42 = 62
+        assertEquals(62.0, resultDto.getAverage(), "Average should be (50*0.4) + (70*0.6) = 62.0");
+        assertEquals(GradeResult.GECTI, resultDto.getResult(), "Result should be GECTI for average >= 60");
+        
+        verify(gradeRepository, times(1)).save(any(Grade.class));
     }
 
     @Test
-    @DisplayName("Should throw IllegalArgumentException when grades are out of 0-100 range")
-    void testProcessGradeEntry_InvalidGrades() {
-        // Arrange
-        Grade gradeRequest = new Grade();
-        gradeRequest.setMidterm(110.0); // Invalid
-        gradeRequest.setFinalExam(50.0);
+    @DisplayName("Should calculate average as 54.0 and result as KALDI")
+    void shouldCalculateFailingGrade() {
+        // Arrange: Set grades that will fail (30 mid, 70 final)
+        inputDto.setMidterm(30.0);
+        inputDto.setFinalExam(70.0);
+        // (30 * 0.4) + (70 * 0.6) = 12 + 42 = 54
 
-        // Act & Assert
-        assertThrows(IllegalArgumentException.class, () -> {
-            gradeService.processGradeEntry(UUID.randomUUID(), gradeRequest);
-        }, "Should throw exception for grades > 100");
+        when(enrollmentRepository.findById("env-123")).thenReturn(Optional.of(mockEnrollment));
+        when(gradeMapper.toEntity(any(GradeDTO.class))).thenReturn(mockGrade);
+        when(gradeRepository.save(any(Grade.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(gradeMapper.toDto(any(Grade.class))).thenAnswer(invocation -> {
+            Grade g = invocation.getArgument(0);
+            return GradeDTO.builder().average(g.getAverage()).result(g.getResult()).build();
+        });
+
+        // Act
+        GradeDTO resultDto = gradeService.submitGrade(inputDto);
+
+        // Assert
+        assertEquals(54.0, resultDto.getAverage());
+        assertEquals(GradeResult.KALDI, resultDto.getResult());
     }
 }

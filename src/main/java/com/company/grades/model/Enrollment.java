@@ -1,72 +1,31 @@
 package com.company.grades.model;
 
 import jakarta.persistence.*;
-import java.util.UUID;
+import lombok.*;
 
 @Entity
 @Table(name = "enrollments", uniqueConstraints = {
-    @UniqueConstraint(columnNames = {"student_id", "course_id"}) // Business Rule: Section 4 
+    @UniqueConstraint(columnNames = {"student_id", "course_id"}) // A student cannot take the same course twice at once
 })
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class Enrollment {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
-    private UUID id;
+    private String id;
 
-    @ManyToOne
+    @ManyToOne(optional = false)
     @JoinColumn(name = "student_id", nullable = false)
+    // The student taking the class
     private Student student;
 
-    @ManyToOne
+    @ManyToOne(optional = false)
     @JoinColumn(name = "course_id", nullable = false)
+    // The class being taken
     private Course course;
 
-    private String semester;
-    
-    private String status;
-
-    // Default Constructor (Required by JPA)
-    public Enrollment() {
-    }
-
-    // Getters and Setters
-    public UUID getId() {
-        return id;
-    }
-
-    public void setId(UUID id) {
-        this.id = id;
-    }
-
-    public Student getStudent() {
-        return student;
-    }
-
-    public void setStudent(Student student) {
-        this.student = student;
-    }
-
-    public Course getCourse() {
-        return course;
-    }
-
-    public void setCourse(Course course) {
-        this.course = course;
-    }
-
-    public String getSemester() {
-        return semester;
-    }
-
-    public void setSemester(String semester) {
-        this.semester = semester;
-    }
-
-    public String getStatus() {
-        return status;
-    }
-
-    public void setStatus(String status) {
-        this.status = status;
-    }
+    // Optional: Semester field (e.g., "Fall 2023") could be added here
 }

@@ -1,44 +1,58 @@
 package com.company.grades.controller;
 
-import com.company.grades.model.Grade;
-import com.company.grades.service.GradeService;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+
+import com.company.grades.dto.EnrollmentDTO;
+import com.company.grades.service.EnrollmentService;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.bean.override.mockito.MockitoBean; // New Import for Spring Boot 3.4+
+import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
-import java.util.UUID;
-
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
-
-@SpringBootTest
-@AutoConfigureMockMvc
+@WebMvcTest(EnrollmentController.class)
 public class EnrollmentControllerTest {
 
     @Autowired
     private MockMvc mockMvc;
 
+    @MockBean
+    private EnrollmentService enrollmentService; // Mocking the interface
+
     @Autowired
     private ObjectMapper objectMapper;
 
-    @MockitoBean // Replaces @MockBean for Spring Boot 3.4+
-    private GradeService gradeService;
-
     @Test
-    public void testFullGradeEntryFlow() throws Exception {
-        UUID enrollmentId = UUID.randomUUID();
-        Grade gradeRequest = new Grade();
-        gradeRequest.setMidterm(80.0);
-        gradeRequest.setFinalExam(90.0);
+    @DisplayName("POST /api/v1/enrollments - Should return 201 Created")
+    void shouldEnrollStudent() throws Exception {
+        // 1. Prepare DTO
+        EnrollmentDTO requestDto = EnrollmentDTO.builder()
+                .studentId("std-1")
+                .courseId("crs-1")
+                .build();
 
-        mockMvc.perform(post("/api/v1/enrollments/" + enrollmentId + "/grade")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(gradeRequest)))
-                .andExpect(status().isOk());
+        EnrollmentDTO responseDto = EnrollmentDTO.builder()
+                .id("enr-100")
+                .studentId("std-1")
+                .courseId("crs-1")
+                .build();
+
+        // 2. Mock Service behavior
+        when(enrollmentService.enrollStudent(any(EnrollmentDTO.class))).thenReturn(responseDto);
+
+        // 3. Perform Request and Assert
+        mockMvc.perform(post("/api/v1/enrollments")
+                .contentType(MediaType.APPLICATION_JSON) // FIX IS HERE
+                .content(objectMapper.writeValueAsString(requestDto)))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.id").value("enr-100"))
+                .andExpect(jsonPath("$.studentId").value("std-1"));
     }
 }

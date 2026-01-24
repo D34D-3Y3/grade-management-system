@@ -1,36 +1,29 @@
 package com.company.grades.controller;
 
-import com.company.grades.model.Course;
+import com.company.grades.dto.CourseDTO;
 import com.company.grades.service.CourseService;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import jakarta.validation.Valid;
-import java.util.UUID;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/v1/courses")
+@RequiredArgsConstructor
 public class CourseController {
 
     private final CourseService courseService;
 
-    public CourseController(CourseService courseService) {
-        this.courseService = courseService;
-    }
-
     @PostMapping
-    public ResponseEntity<Course> create(@RequestBody @Valid Course course) {
-        return ResponseEntity.ok(courseService.createCourse(course));
-    }
-
-    @GetMapping("/{id}")
-    public ResponseEntity<Course> getById(@PathVariable UUID id) {
-        return ResponseEntity.ok(courseService.getById(id));
+    public ResponseEntity<CourseDTO> createCourse(@Valid @RequestBody CourseDTO courseDTO) {
+        return new ResponseEntity<>(courseService.createCourse(courseDTO), HttpStatus.CREATED);
     }
 
     @GetMapping
-    public ResponseEntity<Page<Course>> getAll(Pageable pageable) {
-        return ResponseEntity.ok(courseService.getAllCourses(pageable));
+    public ResponseEntity<List<CourseDTO>> getAllCourses() {
+        return ResponseEntity.ok(courseService.getAllCourses());
     }
 }
